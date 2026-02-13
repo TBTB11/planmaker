@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type Unit } from "@/db/db";
+import { db, type Unit, type UnitStatus } from "@/db/db";
 import { v4 as uuidv4 } from "uuid";
 import {
     DndContext,
@@ -10,7 +9,6 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-    DragOverlay,
 } from "@dnd-kit/core";
 import {
     arrayMove,
@@ -24,8 +22,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
-
 import {
     Select,
     SelectContent,
@@ -33,8 +31,22 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { UNIT_STATUS_LABELS, UNIT_STATUS_COLORS } from "@/lib/constants";
 
-function SortableUnitItem({ unit, onRemove }: { unit: Unit; onRemove: (id: string) => void }) {
+interface CurriculumEditorProps {
+    studentId: string;
+    subjects: string[];
+}
+
+function SortableUnitItem({
+    unit,
+    onRemove,
+    onStatusChange,
+}: {
+    unit: Unit;
+    onRemove: (id: string) => void;
+    onStatusChange: (id: string, status: UnitStatus) => void;
+}) {
     const {
         attributes,
         listeners,
@@ -52,38 +64,57 @@ function SortableUnitItem({ unit, onRemove }: { unit: Unit; onRemove: (id: strin
         <div
             ref={setNodeRef}
             style={style}
-            className="flex items-center gap-4 p-4 mb-2 bg-background border rounded-lg shadow-sm"
+            className="flex items-center gap-3 p-3 mb-2 bg-background border rounded-lg shadow-sm"
         >
             <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
-                <GripVertical size={20} />
+                <GripVertical size={18} />
             </div>
-            <div className="flex-1 grid grid-cols-4 gap-4 items-center">
-                <div className="font-medium col-span-2">{unit.name}</div>
-                <div className="text-sm text-muted-foreground">{unit.subject}</div>
-                <div className="text-sm text-muted-foreground">想定コマ数: {unit.estimatedSessions}</div>
+            <div className="flex-1 grid grid-cols-12 gap-2 items-center">
+                <div className="font-medium col-span-4 text-sm">{unit.name}</div>
+                <div className="text-sm text-muted-foreground col-span-2">{unit.subject}</div>
+                <div className="text-sm text-muted-foreground col-span-2">
+                    {unit.estimatedSessions}コマ
+                </div>
+                <div className="col-span-3">
+                    <Select
+                        value={unit.status}
+                        onValueChange={(value: UnitStatus) => onStatusChange(unit.id, value)}
+                    >
+                        <SelectTrigger className="h-7 text-xs">
+                            <Badge className={`${UNIT_STATUS_COLORS[unit.status]} text-xs border-0`}>
+                                {UNIT_STATUS_LABELS[unit.status]}
+                            </Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {(Object.keys(UNIT_STATUS_LABELS) as UnitStatus[]).map((status) => (
+                                <SelectItem key={status} value={status}>
+                                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${UNIT_STATUS_COLORS[status]}`}>
+                                        {UNIT_STATUS_LABELS[status]}
+                                    </span>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
             <Button
                 variant="ghost"
                 size="icon"
+                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={() => onRemove(unit.id)}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-                <Trash2 size={18} />
+                <Trash2 size={16} />
             </Button>
         </div>
     );
 }
 
-export function CurriculumEditor() {
-    const { studentId } = useParams<{ studentId: string }>();
-    const navigate = useNavigate();
-
-    const student = useLiveQuery(() => db.students.get(studentId || ""), [studentId]);
+export function CurriculumEditor({ studentId, subjects }: CurriculumEditorProps) {
     const existingUnits = useLiveQuery(
         () =>
             db.units
                 .where("studentId")
-                .equals(studentId || "")
+                .equals(studentId)
                 .sortBy("order"),
         [studentId]
     );
@@ -109,19 +140,17 @@ export function CurriculumEditor() {
     const handleDragEnd = async (event: any) => {
         const { active, over } = event;
 
-        if (active.id !== over.id) {
+        if (active.id !== over?.id) {
             setUnits((items) => {
                 const oldIndex = items.findIndex((item) => item.id === active.id);
                 const newIndex = items.findIndex((item) => item.id === over.id);
                 const newItems = arrayMove(items, oldIndex, newIndex);
 
-                // Update order in DB
                 const updates = newItems.map((unit, index) => ({
                     key: unit.id,
                     changes: { order: index + 1 },
                 }));
 
-                // Optimize: Bulk update could be better but Dexie update is per item
                 updates.forEach((u) => db.units.update(u.key, u.changes));
 
                 return newItems;
@@ -130,147 +159,142 @@ export function CurriculumEditor() {
     };
 
     const handleAddUnit = async () => {
-        if (!studentId || !newUnitName || !newUnitSubject) return;
+        if (!newUnitName || !newUnitSubject) return;
 
         const newUnit: Unit = {
             id: uuidv4(),
-            studentId: studentId,
+            studentId,
             subject: newUnitSubject,
             name: newUnitName,
             order: units.length + 1,
             estimatedSessions: newUnitSessions,
-            weight: 10, // Default weight
-            status: 'NotStarted'
+            weight: 10,
+            status: "NotStarted",
         };
 
         await db.units.add(newUnit);
         setNewUnitName("");
         setNewUnitSessions(1);
-        // Subject stays same for convenience
     };
 
-    const handleJavaAutoFill = async () => {
-        // Mock AI auto-fill
-        if (!studentId) return;
-
+    const handleAutoFill = async () => {
         const mockUnits: Unit[] = [
-            { id: uuidv4(), studentId, subject: 'Math', name: 'Positive and Negative Numbers', order: units.length + 1, estimatedSessions: 3, weight: 10, status: 'NotStarted' },
-            { id: uuidv4(), studentId, subject: 'Math', name: 'Letters and Expressions', order: units.length + 2, estimatedSessions: 4, weight: 10, status: 'NotStarted' },
-            { id: uuidv4(), studentId, subject: 'Math', name: 'Equations', order: units.length + 3, estimatedSessions: 5, weight: 10, status: 'NotStarted' },
+            { id: uuidv4(), studentId, subject: "数学", name: "正負の数", order: units.length + 1, estimatedSessions: 3, weight: 10, status: "NotStarted" },
+            { id: uuidv4(), studentId, subject: "数学", name: "文字と式", order: units.length + 2, estimatedSessions: 4, weight: 10, status: "NotStarted" },
+            { id: uuidv4(), studentId, subject: "数学", name: "方程式", order: units.length + 3, estimatedSessions: 5, weight: 10, status: "NotStarted" },
         ];
 
         await db.units.bulkAdd(mockUnits);
-    }
+    };
 
     const handleRemoveUnit = async (id: string) => {
         await db.units.delete(id);
     };
 
-    if (!student) return <div>Loading...</div>;
+    const handleStatusChange = async (id: string, status: UnitStatus) => {
+        const changes: Partial<Unit> = { status };
+        if (status === "Completed") {
+            changes.completionDate = new Date();
+        }
+        await db.units.update(id, changes);
+    };
 
     return (
-        <div className="container mx-auto py-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold">{student.name} さんのカリキュラム</h1>
-                    <p className="text-muted-foreground">{student.grade} - {student.schoolType}</p>
-                </div>
-                <Button variant="outline" onClick={() => navigate("/students")}>
-                    戻る
-                </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="md:col-span-2">
-                    <CardHeader>
-                        <CardTitle>学習単元リスト (ドラッグで並べ替え)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={handleDragEnd}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="md:col-span-2">
+                <CardHeader>
+                    <CardTitle className="text-base">学習単元リスト (ドラッグで並べ替え)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <SortableContext
+                            items={units.map((u) => u.id)}
+                            strategy={verticalListSortingStrategy}
                         >
-                            <SortableContext
-                                items={units.map((u) => u.id)}
-                                strategy={verticalListSortingStrategy}
-                            >
-                                <div className="space-y-2">
-                                    {units.length === 0 && <p className="text-muted-foreground text-center py-8">単元が登録されていません。</p>}
-                                    {units.map((unit) => (
-                                        <SortableUnitItem
-                                            key={unit.id}
-                                            unit={unit}
-                                            onRemove={handleRemoveUnit}
-                                        />
-                                    ))}
-                                </div>
-                            </SortableContext>
-                        </DndContext>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>単元を追加</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>教科</Label>
-                            <Select value={newUnitSubject} onValueChange={setNewUnitSubject}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="教科を選択" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {student.subjects.map((sub) => (
-                                        <SelectItem key={sub} value={sub}>
-                                            {sub}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>単元名</Label>
-                            <Input
-                                value={newUnitName}
-                                onChange={(e) => setNewUnitName(e.target.value)}
-                                placeholder="例: 一次関数"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>想定コマ数</Label>
-                            <Input
-                                type="number"
-                                min={1}
-                                value={newUnitSessions}
-                                onChange={(e) => setNewUnitSessions(parseInt(e.target.value))}
-                            />
-                        </div>
-
-                        <Button onClick={handleAddUnit} className="w-full" disabled={!newUnitName || !newUnitSubject}>
-                            <Plus className="mr-2 h-4 w-4" /> 追加
-                        </Button>
-
-                        <div className="relative py-4">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
+                            <div className="space-y-1">
+                                {units.length === 0 && (
+                                    <p className="text-muted-foreground text-center py-8">
+                                        単元が登録されていません。
+                                    </p>
+                                )}
+                                {units.map((unit) => (
+                                    <SortableUnitItem
+                                        key={unit.id}
+                                        unit={unit}
+                                        onRemove={handleRemoveUnit}
+                                        onStatusChange={handleStatusChange}
+                                    />
+                                ))}
                             </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-background px-2 text-muted-foreground">
-                                    または
-                                </span>
-                            </div>
-                        </div>
+                        </SortableContext>
+                    </DndContext>
+                </CardContent>
+            </Card>
 
-                        <Button variant="secondary" onClick={handleJavaAutoFill} className="w-full">
-                            AI自動生成 (Mock)
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-base">単元を追加</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>教科</Label>
+                        <Select value={newUnitSubject} onValueChange={setNewUnitSubject}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="教科を選択" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {subjects.map((sub) => (
+                                    <SelectItem key={sub} value={sub}>
+                                        {sub}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>単元名</Label>
+                        <Input
+                            value={newUnitName}
+                            onChange={(e) => setNewUnitName(e.target.value)}
+                            placeholder="例: 一次関数"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>想定コマ数</Label>
+                        <Input
+                            type="number"
+                            min={1}
+                            value={newUnitSessions}
+                            onChange={(e) => setNewUnitSessions(parseInt(e.target.value) || 1)}
+                        />
+                    </div>
+
+                    <Button onClick={handleAddUnit} className="w-full" disabled={!newUnitName || !newUnitSubject}>
+                        <Plus className="mr-2 h-4 w-4" /> 追加
+                    </Button>
+
+                    <div className="relative py-4">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                                または
+                            </span>
+                        </div>
+                    </div>
+
+                    <Button variant="secondary" onClick={handleAutoFill} className="w-full">
+                        AI自動生成 (Mock)
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
     );
 }
