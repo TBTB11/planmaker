@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { db, type Student, type SchoolType } from "@/db/db";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { db } from "@/db/db";
 import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,40 +21,66 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-
-const SUBJECTS = ["数学", "英語", "国語", "理科", "社会"];
+import { Plus, Trash2 } from "lucide-react";
+import { studentFormSchema, type StudentFormData } from "@/lib/validators";
+import {
+    SUBJECTS,
+    SCHOOL_TYPE_LABELS,
+    GRADES_BY_SCHOOL,
+    GOAL_TYPE_LABELS,
+} from "@/lib/constants";
+import type { SchoolType, GoalType } from "@/db/db";
 
 export function StudentRegistration() {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        studentId: "",
-        name: "",
-        grade: "",
-        schoolType: "JuniorHigh" as SchoolType,
-        subjects: [] as string[],
-        goal: "",
+
+    const {
+        register,
+        handleSubmit,
+        watch,
+        setValue,
+        control,
+        formState: { errors },
+    } = useForm<StudentFormData>({
+        resolver: zodResolver(studentFormSchema) as any,
+        defaultValues: {
+            studentId: "",
+            name: "",
+            grade: "",
+            schoolType: "JuniorHigh",
+            subjects: [],
+            goals: [
+                {
+                    type: "RegularTest",
+                    targetDate: new Date().toISOString().split("T")[0],
+                    description: "",
+                },
+            ],
+        },
     });
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const newStudent: Student = {
-                id: uuidv4(),
-                studentId: formData.studentId,
-                name: formData.name,
-                grade: formData.grade,
-                schoolType: formData.schoolType,
-                goals: [
-                    {
-                        type: "RegularTest", // Default
-                        targetDate: new Date(),
-                        description: formData.goal,
-                    },
-                ],
-                subjects: formData.subjects,
-            };
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "goals",
+    });
 
-            await db.students.add(newStudent);
+    const schoolType = watch("schoolType");
+    const subjects = watch("subjects");
+
+    const onSubmit = async (data: StudentFormData) => {
+        try {
+            await db.students.add({
+                id: uuidv4(),
+                studentId: data.studentId,
+                name: data.name,
+                grade: data.grade,
+                schoolType: data.schoolType,
+                goals: data.goals.map((g) => ({
+                    ...g,
+                    targetDate: new Date(g.targetDate),
+                })),
+                subjects: data.subjects,
+            });
             navigate("/students");
         } catch (error) {
             console.error("Failed to register student:", error);
@@ -62,14 +89,19 @@ export function StudentRegistration() {
     };
 
     const toggleSubject = (subject: string) => {
-        setFormData((prev) => {
-            if (prev.subjects.includes(subject)) {
-                return { ...prev, subjects: prev.subjects.filter((s) => s !== subject) };
-            } else {
-                return { ...prev, subjects: [...prev.subjects, subject] };
-            }
-        });
+        const current = subjects || [];
+        if (current.includes(subject)) {
+            setValue(
+                "subjects",
+                current.filter((s) => s !== subject),
+                { shouldValidate: true }
+            );
+        } else {
+            setValue("subjects", [...current, subject], { shouldValidate: true });
+        }
     };
+
+    const gradeOptions = GRADES_BY_SCHOOL[schoolType] || [];
 
     return (
         <div className="max-w-2xl mx-auto">
@@ -81,18 +113,17 @@ export function StudentRegistration() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div className="space-y-2">
                             <Label htmlFor="studentId">生徒ID</Label>
                             <Input
                                 id="studentId"
                                 placeholder="例: S001"
-                                value={formData.studentId}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, studentId: e.target.value })
-                                }
-                                required
+                                {...register("studentId")}
                             />
+                            {errors.studentId && (
+                                <p className="text-sm text-destructive">{errors.studentId.message}</p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -100,45 +131,56 @@ export function StudentRegistration() {
                             <Input
                                 id="name"
                                 placeholder="例: 山田 太郎"
-                                value={formData.name}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, name: e.target.value })
-                                }
-                                required
+                                {...register("name")}
                             />
+                            {errors.name && (
+                                <p className="text-sm text-destructive">{errors.name.message}</p>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="schoolType">学校種別</Label>
+                                <Label>学校種別</Label>
                                 <Select
-                                    value={formData.schoolType}
-                                    onValueChange={(value: SchoolType) =>
-                                        setFormData({ ...formData, schoolType: value })
-                                    }
+                                    value={schoolType}
+                                    onValueChange={(value: SchoolType) => {
+                                        setValue("schoolType", value);
+                                        setValue("grade", "");
+                                    }}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="選択してください" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Elementary">小学校</SelectItem>
-                                        <SelectItem value="JuniorHigh">中学校</SelectItem>
-                                        <SelectItem value="HighSchool">高校</SelectItem>
+                                        {(Object.keys(SCHOOL_TYPE_LABELS) as SchoolType[]).map((key) => (
+                                            <SelectItem key={key} value={key}>
+                                                {SCHOOL_TYPE_LABELS[key]}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="grade">学年</Label>
-                                <Input
-                                    id="grade"
-                                    placeholder="例: 中2"
-                                    value={formData.grade}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, grade: e.target.value })
-                                    }
-                                    required
-                                />
+                                <Label>学年</Label>
+                                <Select
+                                    value={watch("grade")}
+                                    onValueChange={(value) => setValue("grade", value, { shouldValidate: true })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="選択してください" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {gradeOptions.map((g) => (
+                                            <SelectItem key={g.value} value={g.value}>
+                                                {g.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.grade && (
+                                    <p className="text-sm text-destructive">{errors.grade.message}</p>
+                                )}
                             </div>
                         </div>
 
@@ -149,30 +191,118 @@ export function StudentRegistration() {
                                     <div key={subject} className="flex items-center space-x-2">
                                         <Checkbox
                                             id={`subject-${subject}`}
-                                            checked={formData.subjects.includes(subject)}
+                                            checked={subjects?.includes(subject) || false}
                                             onCheckedChange={() => toggleSubject(subject)}
                                         />
                                         <label
                                             htmlFor={`subject-${subject}`}
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            className="text-sm font-medium leading-none"
                                         >
                                             {subject}
                                         </label>
                                     </div>
                                 ))}
                             </div>
+                            {errors.subjects && (
+                                <p className="text-sm text-destructive">{errors.subjects.message}</p>
+                            )}
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="goal">現在の目標</Label>
-                            <Input
-                                id="goal"
-                                placeholder="例: 次の定期テストで80点以上"
-                                value={formData.goal}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, goal: e.target.value })
-                                }
-                            />
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <Label>目標</Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        append({
+                                            type: "RegularTest",
+                                            targetDate: new Date().toISOString().split("T")[0],
+                                            description: "",
+                                        })
+                                    }
+                                >
+                                    <Plus className="mr-1 h-3 w-3" />
+                                    追加
+                                </Button>
+                            </div>
+                            {fields.map((field, index) => (
+                                <Card key={field.id} className="p-4">
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium">目標 {index + 1}</span>
+                                            {fields.length > 1 && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 text-destructive"
+                                                    onClick={() => remove(index)}
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">種別</Label>
+                                                <Select
+                                                    value={watch(`goals.${index}.type`)}
+                                                    onValueChange={(value: GoalType) =>
+                                                        setValue(`goals.${index}.type`, value)
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {(Object.keys(GOAL_TYPE_LABELS) as GoalType[]).map((key) => (
+                                                            <SelectItem key={key} value={key}>
+                                                                {GOAL_TYPE_LABELS[key]}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">目標期日</Label>
+                                                <Input
+                                                    type="date"
+                                                    {...register(`goals.${index}.targetDate`)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div className="col-span-2 space-y-1">
+                                                <Label className="text-xs">説明</Label>
+                                                <Input
+                                                    placeholder="例: 次の定期テストで80点以上"
+                                                    {...register(`goals.${index}.description`)}
+                                                />
+                                                {errors.goals?.[index]?.description && (
+                                                    <p className="text-xs text-destructive">
+                                                        {errors.goals[index]?.description?.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">目標点数</Label>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    max={100}
+                                                    placeholder="任意"
+                                                    {...register(`goals.${index}.targetScore`, { valueAsNumber: true })}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                            {errors.goals && !Array.isArray(errors.goals) && (
+                                <p className="text-sm text-destructive">{errors.goals.message}</p>
+                            )}
                         </div>
 
                         <div className="flex justify-end space-x-2">
