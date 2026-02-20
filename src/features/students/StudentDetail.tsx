@@ -1,17 +1,21 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/db";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { StudentSummaryCard } from "./StudentSummaryCard";
 import { GoalEditor } from "./GoalEditor";
 import { CurriculumEditor } from "./CurriculumEditor";
+import { ClassRecordForm } from "@/features/class-records/ClassRecordForm";
+import { ClassRecordList } from "@/features/class-records/ClassRecordList";
 import { SCHOOL_TYPE_LABELS, GRADES_BY_SCHOOL } from "@/lib/constants";
 
 export function StudentDetail() {
     const { studentId } = useParams<{ studentId: string }>();
     const navigate = useNavigate();
+    const [recordFormOpen, setRecordFormOpen] = useState(false);
 
     const student = useLiveQuery(
         () => db.students.get(studentId || ""),
@@ -69,8 +73,19 @@ export function StudentDetail() {
                 </TabsContent>
 
                 <TabsContent value="records">
-                    <div className="text-center py-12 text-muted-foreground">
-                        <p>授業記録機能は次のフェーズで実装予定です。</p>
+                    <div className="space-y-4">
+                        <div className="flex justify-end">
+                            <Button onClick={() => setRecordFormOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                授業記録を追加
+                            </Button>
+                        </div>
+                        <ClassRecordList studentId={student.id} />
+                        <ClassRecordForm
+                            studentId={student.id}
+                            open={recordFormOpen}
+                            onOpenChange={setRecordFormOpen}
+                        />
                     </div>
                 </TabsContent>
 

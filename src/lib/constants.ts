@@ -63,3 +63,11 @@ export const UNDERSTANDING_LABELS: Record<number, string> = {
     4: "概ね理解",
     5: "完全理解",
 };
+
+export const NEXT_STATUS_SUGGESTION: Partial<Record<UnitStatus, UnitStatus>> = {
+    NotStarted: "Introduced",
+    Introduced: "Practicing",
+    Practicing: "WaitingConfirmation",
+    WaitingConfirmation: "Completed",
+    NeedsReview: "Practicing",
+};
