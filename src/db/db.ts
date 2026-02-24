@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
+import type { AIConfidence } from '@/lib/ai/types';
 
 export type GoalType = 'Exam' | 'RegularTest' | 'OvercomingWeakness' | 'Advanced';
 export type UnitStatus = 'NotStarted' | 'Introduced' | 'Practicing' | 'WaitingConfirmation' | 'Completed' | 'NeedsReview' | 'OnHold';
@@ -32,6 +33,8 @@ export interface Unit {
     status: UnitStatus;
     completionDate?: Date;
     reviewDueDate?: Date;
+    aiProposed?: boolean;
+    aiConfidence?: AIConfidence;
 }
 
 export interface ClassRecord {

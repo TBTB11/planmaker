@@ -121,3 +121,7 @@ dist
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+documents/code_structure_guide.md
+
+documents/pr_explanation_feat_class_records.md

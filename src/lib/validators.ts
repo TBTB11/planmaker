@@ -39,3 +39,20 @@ export const classRecordFormSchema = z.object({
 
 export type ClassRecordFormData = z.infer<typeof classRecordFormSchema>;
 export type UnitStatusUpdateData = z.infer<typeof unitStatusUpdateSchema>;
+
+export const wizardStep1Schema = z.object({
+    studentId: z.string().min(1, "生徒IDを入力してください"),
+    schoolType: z.enum(["Elementary", "JuniorHigh", "HighSchool"]),
+    grade: z.string().min(1, "学年を選択してください"),
+    subjects: z.array(z.string()).min(1, "科目を1つ以上選択してください"),
+});
+
+export const wizardGoalSchema = z.object({
+    goalType: z.enum(["Exam", "RegularTest", "OvercomingWeakness", "Advanced"]),
+    targetDate: z.string().min(1, "目標期日を入力してください"),
+    targetScore: z.coerce.number().min(0).max(100).optional(),
+    description: z.string().min(1, "目標の説明を入力してください"),
+});
+
+export type WizardStep1Data = z.infer<typeof wizardStep1Schema>;
+export type WizardGoalData = z.infer<typeof wizardGoalSchema>;
