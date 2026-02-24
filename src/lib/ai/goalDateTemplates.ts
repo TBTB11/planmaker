@@ -1,4 +1,28 @@
-import type { GoalDateTemplateMap } from "./types";
+import type { GoalDateTemplate, GoalDateTemplateMap } from "./types";
+
+// 中学校の定期テスト共通日程（5回: 中間×2 + 期末×2 + 学年末）
+const JH_REGULAR_5: GoalDateTemplate[] = [
+    { month: 5, day: 25, reasoning: "1学期中間テストは通常5月下旬に実施されます。", confidence: "high" },
+    { month: 7, day: 1, reasoning: "1学期期末テストは通常6月末〜7月初旬に実施されます。", confidence: "high" },
+    { month: 10, day: 15, reasoning: "2学期中間テストは通常10月中旬に実施されます。", confidence: "high" },
+    { month: 11, day: 28, reasoning: "2学期期末テストは通常11月末に実施されます。", confidence: "high" },
+    { month: 2, day: 20, reasoning: "学年末テストは通常2月下旬に実施されます。", confidence: "high" },
+];
+
+// 中3は学年末なし（4回）
+const JH_REGULAR_4: GoalDateTemplate[] = JH_REGULAR_5.slice(0, 4);
+
+// 高校の定期テスト共通日程（5回）
+const HS_REGULAR_5: GoalDateTemplate[] = [
+    { month: 5, day: 25, reasoning: "1学期中間テストは通常5月下旬に実施されます。", confidence: "high" },
+    { month: 7, day: 1, reasoning: "1学期期末テストは通常7月初旬に実施されます。", confidence: "high" },
+    { month: 10, day: 15, reasoning: "2学期中間テストは通常10月中旬に実施されます。", confidence: "high" },
+    { month: 12, day: 1, reasoning: "2学期期末テストは通常12月初旬に実施されます。", confidence: "high" },
+    { month: 2, day: 25, reasoning: "学年末テストは通常2月下旬に実施されます。", confidence: "high" },
+];
+
+// 高3は学年末なし（3回: 中間+期末+中間のみ）
+const HS_REGULAR_3: GoalDateTemplate[] = HS_REGULAR_5.slice(0, 3);
 
 export const goalDateTemplates: GoalDateTemplateMap = {
     Exam: {
@@ -22,49 +46,8 @@ export const goalDateTemplates: GoalDateTemplateMap = {
     },
     RegularTest: {
         Elementary: {},
-        JuniorHigh: {
-            J1: [
-                { month: 5, day: 25, reasoning: "1学期中間テストは通常5月下旬に実施されます。", confidence: "high" },
-                { month: 7, day: 1, reasoning: "1学期期末テストは通常6月末〜7月初旬に実施されます。", confidence: "high" },
-                { month: 10, day: 15, reasoning: "2学期中間テストは通常10月中旬に実施されます。", confidence: "high" },
-                { month: 11, day: 28, reasoning: "2学期期末テストは通常11月末に実施されます。", confidence: "high" },
-                { month: 2, day: 20, reasoning: "学年末テストは通常2月下旬に実施されます。", confidence: "high" },
-            ],
-            J2: [
-                { month: 5, day: 25, reasoning: "1学期中間テストは通常5月下旬に実施されます。", confidence: "high" },
-                { month: 7, day: 1, reasoning: "1学期期末テストは通常6月末〜7月初旬に実施されます。", confidence: "high" },
-                { month: 10, day: 15, reasoning: "2学期中間テストは通常10月中旬に実施されます。", confidence: "high" },
-                { month: 11, day: 28, reasoning: "2学期期末テストは通常11月末に実施されます。", confidence: "high" },
-                { month: 2, day: 20, reasoning: "学年末テストは通常2月下旬に実施されます。", confidence: "high" },
-            ],
-            J3: [
-                { month: 5, day: 25, reasoning: "1学期中間テストは通常5月下旬に実施されます。", confidence: "high" },
-                { month: 7, day: 1, reasoning: "1学期期末テストは通常6月末〜7月初旬に実施されます。", confidence: "high" },
-                { month: 10, day: 15, reasoning: "2学期中間テストは通常10月中旬に実施されます。", confidence: "high" },
-                { month: 11, day: 28, reasoning: "2学期期末テストは通常11月末に実施されます。", confidence: "high" },
-            ],
-        },
-        HighSchool: {
-            H1: [
-                { month: 5, day: 25, reasoning: "1学期中間テストは通常5月下旬に実施されます。", confidence: "high" },
-                { month: 7, day: 1, reasoning: "1学期期末テストは通常7月初旬に実施されます。", confidence: "high" },
-                { month: 10, day: 15, reasoning: "2学期中間テストは通常10月中旬に実施されます。", confidence: "high" },
-                { month: 12, day: 1, reasoning: "2学期期末テストは通常12月初旬に実施されます。", confidence: "high" },
-                { month: 2, day: 25, reasoning: "学年末テストは通常2月下旬に実施されます。", confidence: "high" },
-            ],
-            H2: [
-                { month: 5, day: 25, reasoning: "1学期中間テストは通常5月下旬に実施されます。", confidence: "high" },
-                { month: 7, day: 1, reasoning: "1学期期末テストは通常7月初旬に実施されます。", confidence: "high" },
-                { month: 10, day: 15, reasoning: "2学期中間テストは通常10月中旬に実施されます。", confidence: "high" },
-                { month: 12, day: 1, reasoning: "2学期期末テストは通常12月初旬に実施されます。", confidence: "high" },
-                { month: 2, day: 25, reasoning: "学年末テストは通常2月下旬に実施されます。", confidence: "high" },
-            ],
-            H3: [
-                { month: 5, day: 25, reasoning: "1学期中間テストは通常5月下旬に実施されます。", confidence: "high" },
-                { month: 7, day: 1, reasoning: "1学期期末テストは通常7月初旬に実施されます。", confidence: "high" },
-                { month: 10, day: 15, reasoning: "2学期中間テストは通常10月中旬に実施されます。", confidence: "high" },
-            ],
-        },
+        JuniorHigh: { J1: JH_REGULAR_5, J2: JH_REGULAR_5, J3: JH_REGULAR_4 },
+        HighSchool: { H1: HS_REGULAR_5, H2: HS_REGULAR_5, H3: HS_REGULAR_3 },
     },
     OvercomingWeakness: {
         Elementary: {},

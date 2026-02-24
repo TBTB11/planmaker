@@ -1,199 +1,111 @@
-import type { CurriculumTemplateMap } from "./types";
+import type { CurriculumTemplate, CurriculumTemplateMap, TemplateUnit } from "./types";
+
+// Helper: high confidence unit
+const h = (name: string, sessions: number, weight: number): TemplateUnit =>
+    ({ name, estimatedSessions: sessions, weight, confidence: "high" });
+
+// Helper: medium confidence unit
+const m = (name: string, sessions: number, weight: number): TemplateUnit =>
+    ({ name, estimatedSessions: sessions, weight, confidence: "medium" });
+
+// Helper: wrap units as a standard curriculum template
+const tpl = (units: TemplateUnit[]): CurriculumTemplate =>
+    ({ units, source: "学習指導要領準拠" });
 
 export const curriculumTemplates: CurriculumTemplateMap = {
     JuniorHigh: {
         J1: {
-            "数学": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "正負の数", estimatedSessions: 5, weight: 14, confidence: "high" },
-                    { name: "文字と式", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "一次方程式", estimatedSessions: 5, weight: 14, confidence: "high" },
-                    { name: "比例と反比例", estimatedSessions: 5, weight: 14, confidence: "high" },
-                    { name: "平面図形", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "空間図形", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "データの活用", estimatedSessions: 3, weight: 8, confidence: "medium" },
-                ],
-            },
-            "英語": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "be動詞", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "一般動詞", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "名詞・代名詞の複数形", estimatedSessions: 2, weight: 8, confidence: "high" },
-                    { name: "疑問詞", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "三人称単数現在", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "現在進行形", estimatedSessions: 2, weight: 8, confidence: "high" },
-                    { name: "一般動詞の過去形", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "canの文", estimatedSessions: 2, weight: 7, confidence: "high" },
-                    { name: "命令文", estimatedSessions: 2, weight: 7, confidence: "medium" },
-                ],
-            },
-            "国語": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "漢字・語彙（中1）", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "文法（文の成分・品詞）", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "説明的文章の読解", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "文学的文章の読解", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "古典入門（歴史的仮名遣い）", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "作文・表現", estimatedSessions: 3, weight: 10, confidence: "medium" },
-                    { name: "詩・短歌・俳句", estimatedSessions: 2, weight: 7, confidence: "medium" },
-                ],
-            },
-            "理科": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "植物の体のつくりとはたらき", estimatedSessions: 4, weight: 13, confidence: "high" },
-                    { name: "動物の分類", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "身のまわりの物質", estimatedSessions: 4, weight: 13, confidence: "high" },
-                    { name: "気体の性質", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "水溶液の性質", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "光と音", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "力のはたらき", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "大地の変化", estimatedSessions: 3, weight: 10, confidence: "high" },
-                ],
-            },
-            "社会": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "世界の姿", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "世界各地の人々の生活と環境", estimatedSessions: 4, weight: 13, confidence: "high" },
-                    { name: "世界の諸地域", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "日本の姿", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "日本の諸地域", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "古代までの日本", estimatedSessions: 4, weight: 13, confidence: "high" },
-                    { name: "中世の日本", estimatedSessions: 3, weight: 10, confidence: "high" },
-                ],
-            },
+            "数学": tpl([
+                h("正負の数", 5, 14), h("文字と式", 4, 12), h("一次方程式", 5, 14),
+                h("比例と反比例", 5, 14), h("平面図形", 4, 12), h("空間図形", 4, 12),
+                m("データの活用", 3, 8),
+            ]),
+            "英語": tpl([
+                h("be動詞", 3, 10), h("一般動詞", 3, 10), h("名詞・代名詞の複数形", 2, 8),
+                h("疑問詞", 3, 10), h("三人称単数現在", 3, 10), h("現在進行形", 2, 8),
+                h("一般動詞の過去形", 3, 10), h("canの文", 2, 7), m("命令文", 2, 7),
+            ]),
+            "国語": tpl([
+                h("漢字・語彙（中1）", 4, 12), h("文法（文の成分・品詞）", 4, 12),
+                h("説明的文章の読解", 5, 15), h("文学的文章の読解", 5, 15),
+                h("古典入門（歴史的仮名遣い）", 3, 10),
+                m("作文・表現", 3, 10), m("詩・短歌・俳句", 2, 7),
+            ]),
+            "理科": tpl([
+                h("植物の体のつくりとはたらき", 4, 13), h("動物の分類", 3, 10),
+                h("身のまわりの物質", 4, 13), h("気体の性質", 3, 10),
+                h("水溶液の性質", 3, 10), h("光と音", 3, 10),
+                h("力のはたらき", 3, 10), h("大地の変化", 3, 10),
+            ]),
+            "社会": tpl([
+                h("世界の姿", 3, 10), h("世界各地の人々の生活と環境", 4, 13),
+                h("世界の諸地域", 5, 15), h("日本の姿", 3, 10),
+                h("日本の諸地域", 5, 15), h("古代までの日本", 4, 13),
+                h("中世の日本", 3, 10),
+            ]),
         },
         J2: {
-            "数学": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "式の計算", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "連立方程式", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "一次関数", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "平行と合同", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "三角形と四角形", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "確率", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "データの比較", estimatedSessions: 3, weight: 8, confidence: "medium" },
-                ],
-            },
-            "英語": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "be動詞の過去形", estimatedSessions: 2, weight: 8, confidence: "high" },
-                    { name: "過去進行形", estimatedSessions: 2, weight: 8, confidence: "high" },
-                    { name: "未来形 (will/be going to)", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "助動詞", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "不定詞", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "動名詞", estimatedSessions: 2, weight: 8, confidence: "high" },
-                    { name: "比較級・最上級", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "受動態", estimatedSessions: 3, weight: 10, confidence: "medium" },
-                    { name: "接続詞", estimatedSessions: 2, weight: 7, confidence: "medium" },
-                ],
-            },
-            "国語": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "漢字・語彙（中2）", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "文法（用言の活用）", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "論説文の読解", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "小説の読解", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "古文の読解", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "漢文入門", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "意見文・小論文", estimatedSessions: 3, weight: 10, confidence: "medium" },
-                ],
-            },
-            "理科": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "化学変化と原子・分子", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "化学変化と物質の質量", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "電流とその利用", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "電流と磁界", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "動物の体のつくりとはたらき", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "気象のしくみと天気の変化", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "日本の気象", estimatedSessions: 3, weight: 10, confidence: "high" },
-                ],
-            },
-            "社会": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "近世の日本", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "近代の日本と世界", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "二度の世界大戦と日本", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "現代の日本と世界", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "日本の地域的特色", estimatedSessions: 4, weight: 13, confidence: "high" },
-                    { name: "世界と比べた日本の地域的特色", estimatedSessions: 3, weight: 10, confidence: "medium" },
-                ],
-            },
+            "数学": tpl([
+                h("式の計算", 4, 12), h("連立方程式", 5, 15), h("一次関数", 5, 15),
+                h("平行と合同", 4, 12), h("三角形と四角形", 4, 12),
+                h("確率", 3, 10), m("データの比較", 3, 8),
+            ]),
+            "英語": tpl([
+                h("be動詞の過去形", 2, 8), h("過去進行形", 2, 8),
+                h("未来形 (will/be going to)", 3, 10), h("助動詞", 3, 10),
+                h("不定詞", 4, 12), h("動名詞", 2, 8), h("比較級・最上級", 4, 12),
+                m("受動態", 3, 10), m("接続詞", 2, 7),
+            ]),
+            "国語": tpl([
+                h("漢字・語彙（中2）", 4, 12), h("文法（用言の活用）", 4, 12),
+                h("論説文の読解", 5, 15), h("小説の読解", 5, 15),
+                h("古文の読解", 4, 12), h("漢文入門", 3, 10),
+                m("意見文・小論文", 3, 10),
+            ]),
+            "理科": tpl([
+                h("化学変化と原子・分子", 5, 15), h("化学変化と物質の質量", 3, 10),
+                h("電流とその利用", 5, 15), h("電流と磁界", 3, 10),
+                h("動物の体のつくりとはたらき", 4, 12),
+                h("気象のしくみと天気の変化", 4, 12), h("日本の気象", 3, 10),
+            ]),
+            "社会": tpl([
+                h("近世の日本", 4, 12), h("近代の日本と世界", 5, 15),
+                h("二度の世界大戦と日本", 4, 12), h("現代の日本と世界", 3, 10),
+                h("日本の地域的特色", 4, 13),
+                m("世界と比べた日本の地域的特色", 3, 10),
+            ]),
         },
         J3: {
-            "数学": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "多項式の展開と因数分解", estimatedSessions: 5, weight: 14, confidence: "high" },
-                    { name: "平方根", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "二次方程式", estimatedSessions: 5, weight: 14, confidence: "high" },
-                    { name: "関数 y=ax²", estimatedSessions: 5, weight: 14, confidence: "high" },
-                    { name: "相似な図形", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "円の性質", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "三平方の定理", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "標本調査", estimatedSessions: 2, weight: 6, confidence: "medium" },
-                ],
-            },
-            "英語": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "現在完了形", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "現在完了進行形", estimatedSessions: 2, weight: 8, confidence: "high" },
-                    { name: "関係代名詞", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "間接疑問文", estimatedSessions: 2, weight: 8, confidence: "high" },
-                    { name: "分詞の形容詞的用法", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "仮定法", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "長文読解演習", estimatedSessions: 5, weight: 15, confidence: "medium" },
-                    { name: "英作文演習", estimatedSessions: 3, weight: 10, confidence: "medium" },
-                ],
-            },
-            "国語": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "漢字・語彙（中3）", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "文法（助詞・助動詞）", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "論説文・評論文の読解", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "文学的文章の読解（中3）", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "古文の読解（中3）", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "漢文の読解", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "小論文・作文", estimatedSessions: 3, weight: 10, confidence: "medium" },
-                ],
-            },
-            "理科": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "水溶液とイオン", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "化学変化と電池", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "運動とエネルギー", estimatedSessions: 5, weight: 15, confidence: "high" },
-                    { name: "仕事とエネルギー", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "生命の連続性", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "遺伝の規則性", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "地球と宇宙", estimatedSessions: 4, weight: 12, confidence: "high" },
-                    { name: "自然と人間", estimatedSessions: 2, weight: 7, confidence: "medium" },
-                ],
-            },
-            "社会": {
-                source: "学習指導要領準拠",
-                units: [
-                    { name: "現代社会と私たちの生活", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "個人の尊重と日本国憲法", estimatedSessions: 4, weight: 13, confidence: "high" },
-                    { name: "民主政治と政治参加", estimatedSessions: 4, weight: 13, confidence: "high" },
-                    { name: "市場経済と金融", estimatedSessions: 4, weight: 13, confidence: "high" },
-                    { name: "財政と国民の福祉", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "国際社会と世界平和", estimatedSessions: 3, weight: 10, confidence: "high" },
-                    { name: "私たちと国際社会の課題", estimatedSessions: 3, weight: 10, confidence: "medium" },
-                ],
-            },
+            "数学": tpl([
+                h("多項式の展開と因数分解", 5, 14), h("平方根", 4, 12),
+                h("二次方程式", 5, 14), h("関数 y=ax²", 5, 14),
+                h("相似な図形", 4, 12), h("円の性質", 3, 10),
+                h("三平方の定理", 4, 12), m("標本調査", 2, 6),
+            ]),
+            "英語": tpl([
+                h("現在完了形", 4, 12), h("現在完了進行形", 2, 8),
+                h("関係代名詞", 4, 12), h("間接疑問文", 2, 8),
+                h("分詞の形容詞的用法", 3, 10), h("仮定法", 3, 10),
+                m("長文読解演習", 5, 15), m("英作文演習", 3, 10),
+            ]),
+            "国語": tpl([
+                h("漢字・語彙（中3）", 4, 12), h("文法（助詞・助動詞）", 4, 12),
+                h("論説文・評論文の読解", 5, 15), h("文学的文章の読解（中3）", 5, 15),
+                h("古文の読解（中3）", 4, 12), h("漢文の読解", 3, 10),
+                m("小論文・作文", 3, 10),
+            ]),
+            "理科": tpl([
+                h("水溶液とイオン", 4, 12), h("化学変化と電池", 3, 10),
+                h("運動とエネルギー", 5, 15), h("仕事とエネルギー", 3, 10),
+                h("生命の連続性", 4, 12), h("遺伝の規則性", 3, 10),
+                h("地球と宇宙", 4, 12), m("自然と人間", 2, 7),
+            ]),
+            "社会": tpl([
+                h("現代社会と私たちの生活", 3, 10), h("個人の尊重と日本国憲法", 4, 13),
+                h("民主政治と政治参加", 4, 13), h("市場経済と金融", 4, 13),
+                h("財政と国民の福祉", 3, 10), h("国際社会と世界平和", 3, 10),
+                m("私たちと国際社会の課題", 3, 10),
+            ]),
         },
     },
     Elementary: {},
