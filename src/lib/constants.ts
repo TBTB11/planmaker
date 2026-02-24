@@ -1,4 +1,5 @@
 import type { GoalType, SchoolType, UnitStatus } from "@/db/db";
+import type { AIConfidence } from "@/lib/ai/types";
 
 export const SUBJECTS = ["数学", "英語", "国語", "理科", "社会"] as const;
 
@@ -70,4 +71,22 @@ export const NEXT_STATUS_SUGGESTION: Partial<Record<UnitStatus, UnitStatus>> = {
     Practicing: "WaitingConfirmation",
     WaitingConfirmation: "Completed",
     NeedsReview: "Practicing",
+};
+
+export const AI_CONFIDENCE_LABELS: Record<AIConfidence, string> = {
+    high: "高",
+    medium: "中",
+    low: "低",
+};
+
+export const AI_CONFIDENCE_DOTS: Record<AIConfidence, string> = {
+    high: "●●●",
+    medium: "●●○",
+    low: "●○○",
+};
+
+export const AI_CONFIDENCE_COLORS: Record<AIConfidence, string> = {
+    high: "text-green-600",
+    medium: "text-yellow-600",
+    low: "text-red-500",
 };

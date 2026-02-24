@@ -5,7 +5,7 @@ import { seedDatabase } from "@/db/seed";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, BookOpen, PlusCircle, Database } from "lucide-react";
+import { Users, BookOpen, PlusCircle, Database, Sparkles } from "lucide-react";
 import { SCHOOL_TYPE_LABELS, GRADES_BY_SCHOOL } from "@/lib/constants";
 
 export function Dashboard() {
@@ -83,23 +83,36 @@ export function Dashboard() {
             <div>
                 <h3 className="text-lg font-semibold mb-4">担当生徒</h3>
                 {totalStudents === 0 ? (
-                    <Card>
-                        <CardContent className="text-center py-12">
-                            <p className="text-muted-foreground mb-4">
-                                生徒が登録されていません。
+                    <Card className="border-2 border-dashed">
+                        <CardContent className="text-center py-16 space-y-4">
+                            <Sparkles className="h-12 w-12 mx-auto text-primary" />
+                            <h3 className="text-xl font-bold">
+                                PlanMaker へようこそ！
+                            </h3>
+                            <p className="text-muted-foreground max-w-md mx-auto">
+                                初めてのセットアップを始めましょう。AIがカリキュラムを提案します。
                             </p>
                             <div className="flex gap-2 justify-center">
-                                <Button asChild>
-                                    <Link to="/students/new">
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        新規生徒登録
+                                <Button asChild size="lg">
+                                    <Link to="/setup">
+                                        <Sparkles className="mr-2 h-4 w-4" />
+                                        ガイド付きセットアップ
                                     </Link>
                                 </Button>
-                                <Button variant="outline" onClick={() => seedDatabase()}>
-                                    <Database className="mr-2 h-4 w-4" />
-                                    テストデータを投入
+                                <Button asChild variant="outline">
+                                    <Link to="/students/new">
+                                        手動で登録
+                                    </Link>
                                 </Button>
                             </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => seedDatabase()}
+                            >
+                                <Database className="mr-2 h-4 w-4" />
+                                テストデータを投入
+                            </Button>
                         </CardContent>
                     </Card>
                 ) : (
